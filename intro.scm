@@ -112,8 +112,35 @@
   (reduce (lambda (prev curr) (cons curr prev))
           (reverse l) (list x)))
 
+(define (take-n n l)
+  (define (first-n* n l result)
+    (if (= n 0) result
+        (first-n* (dec n) (cdr l) (cons (car l) result))))
+  (reverse (first-n* n l '())))
+
+(define (last-n n l)
+  (reverse (take-n n (reverse l))))
+
+(define (drop-n n l)
+  (define (drop-n* n l result)
+    (if (= n 0) result
+        (drop-n* (dec n) (cdr l) (cons (car l) result))))
+  (reverse (first-n* n l '())))
+
+(last-n 2 '(0 1 2))
+
+(define (dec x)
+  (- x 1))
+
 (define (partition n l)
-  ...)
+  (reverse (reduce (lambda (prev curr)
+                     (let ([next (reverse
+                                  (cons curr
+                                        (take-n (dec n) (reverse (car prev)))))])
+                       (cons next prev))) (cddr l) (list (take-n n l)))))
+
+(partition 2 '(0 1 2 3))
+
 (define (make-row prev)
   (map (lambda (l)
          (+ (car l))
