@@ -1,3 +1,6 @@
+(define (dec x)
+  (- x 1))
+
 (define (square n) (* n n))
 
 ;; Ex. 1.3
@@ -92,13 +95,6 @@
 (e1.11 4)
 
 ;; Ex. 1.12
-(define (pascals-triangle n)
-  (cond ((= n 1) `(1))
-        ((= n 2) (cons (pascals-triangle (- n 1)) `(1 1)))))
-((= n 3) (cons (pascals-triangle (- n 1) )))
-
-
-
 (define (reduce fn l init)
   (if (null? l)
       init
@@ -109,8 +105,9 @@
           l '()))
 
 (define (cons-end x l)
-  (reduce (lambda (prev curr) (cons curr prev))
-          (reverse l) (list x)))
+  (reverse (cons x (reverse l))))
+
+(cons-end 3 '(0 1 2))
 
 (define (take-n n l)
   (define (first-n* n l result)
@@ -122,34 +119,84 @@
   (reverse (take-n n (reverse l))))
 
 (define (drop-n n l)
-  (define (drop-n* n l result)
-    (if (= n 0) result
-        (drop-n* (dec n) (cdr l) (cons (car l) result))))
-  (reverse (first-n* n l '())))
+  (if (= n 0) l
+      (drop-n (dec n) (cdr l))))
 
-(last-n 2 '(0 1 2))
 
-(define (dec x)
-  (- x 1))
+(drop-n 2 '(0 1 2 3))
+
 
 (define (partition n l)
-  (reverse (reduce (lambda (prev curr)
+  (reverse (reduce (lambda (prev2 curr)
                      (let ([next (reverse
                                   (cons curr
-                                        (take-n (dec n) (reverse (car prev)))))])
-                       (cons next prev))) (cddr l) (list (take-n n l)))))
-
-(partition 2 '(0 1 2 3))
+                                        (take-n (dec n) (reverse (car prev2)))))])
+                       (cons next prev2))) (drop-n n l) (list (take-n n l)))))
 
 (define (make-row prev)
-  (map (lambda (l)
-         (+ (car l))
-         (cadr l))
-       (partition 2 prev)))
+  (cons 1
+        (cons-end 1
+                  (map (lambda (l)
+                             (+ (car l)
+                                (cadr l)))
+                           (partition 2 prev)))))
 
 (make-row (list 1 2 2 1))
 
 
+
+(define (pascals-triangle n)
+  (define (pascals-triangle* n result)
+    (cond ((= n 1)
+           (cons (list 1) result))
+          ((= n 2) (cons (list 1 1) (pascals-triangle* (dec n) result)))
+          (else (let ([prev (pascals-triangle* (dec n) result)])
+                  (cons (make-row (car prev))
+                        prev)))))
+  (reverse
+   (pascals-triangle* n '())))
+
+(pascals-triangle 5)
+
+
+;; 1.16
+(define (even? n)
+  (= (remainder n 2)
+     0))
+
+(define (fast-expt* b n)
+  (cond ((= n 0) 1)
+        ((even? n) (fast-expt* (square b) (/ n 2)))
+;;        ((even? n) (square (fast-expt* b (/ n 2))))
+        (else (* b (fast-expt* b (dec n))))))
+
+(define (fast-expt* b n a)
+  (cond ((= n 0) 1)
+        ((even? n) (fast-expt* (square b) (/ n 2)))
+        ;;        ((even? n) (square (fast-expt* b (/ n 2))))
+        (else (* b (fast-expt* b (dec n))))))
+
+(fast-expt 3 0)
+(fast-expt 3 1) 3 24
+(fast-expt 3 2) 9 18
+(fast-expt 3 3) 27 0
+
+;;         b n  a
+(fast-expt 3 0) 81
+(fast-expt 3 2) 9
+(fast-expt 3 4) 1
+
+(define (fast-expt-itr b n)
+  (define (expt-itr* b n a)
+    (cond ((= n 0) 1)
+          ((even? n) (expt-itr* (square b) (/ n 2) (* a (square b))) )
+          (else (* a (expt-itr* b (dec n) (* a b))))))
+
+  (expt-itr* b n 1))
+
+
+(fast-expt-itr 3 3)
+(fast-expt-itr 3 100)
 
 
 
