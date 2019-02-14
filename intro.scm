@@ -286,21 +286,69 @@
                             (next a)
                             next b))))
 
-(define (filtered-accumulate combiner null-value term a next b filter)
-  (if (> a b)
-      null-value
-      (let ([])
-        (combiner (term a)
-                  (accumulate combiner
-                              null-value
-                              term
-                              (next a)
-                              next b)))))
-
 (accumulate + 0 identity 0 inc 3)
 
 (define (sum-higher-order term a next b)
   (accumulate + 0 term a inc b))
 
 (sum-higher-order identity 0 inc 3)
+
+(define (filtered-accumulate combiner null-value term a next b filter)
+  (if (> a b)
+      null-value
+      (let ([t (term a)])
+        (combiner (if (filter t) t null-value)
+                  (filtered-accumulate
+                   combiner
+                   null-value
+                   term
+                   (next a)
+                   next
+                   b
+                   filter)))))
+
+(filtered-accumulate + 0 identity 0 inc 5 odd?)
+
+(define (nth-odd n)
+  (- (* 2 n) 1))
+
+(nth-odd 4)
+
+;; Ex 1.39
+(define (tan-cf x k)
+  (define (tan-cf* x n)
+    (- (nth-odd n)
+       (if (>= n k) (square x)
+           (/ (square x) (tan-cf* x (inc n))))))
+  (/ x (tan-cf* x 1)))
+
+;; 2 / (1 - (4 / (3 - 4)))
+;; ;; 2 / (1 - (4 / -1))
+;; ;; 2 / (1 + 4)
+;; ;; 2 / 5
+
+(tan-cf 2 2)
+;; 1.3.4
+(define (deriv g)
+  (let ([dx 0.00001])
+    (lambda (x)
+      (/ (- (g (+ x dx)) (g x))
+         dx))))
+
+(define (cube x) (* x x x))
+
+((deriv cube) 3)
+(define (fixed-point f first-guess)
+  (define (close-enough? v1 v2)
+    (> (abs v1 v2) tolerance )))
+(define (newton-transform g)
+  (lambda (x)
+    (/ (- x (g x) ((deriv g) x)))))
+
+(define (newtons-method g guess)
+  (fixed-point (newton-transform g) guess))
+
+(define (sqrt x)
+  (newtons-method (lambda (y) (- (square y) x))
+                  1.0))
 
