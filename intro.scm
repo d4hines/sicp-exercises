@@ -337,13 +337,28 @@
 
 (define (cube x) (* x x x))
 
-((deriv cube) 3)
+((deriv cube) 5)
+
+(define tolerance 0.00001)
+
 (define (fixed-point f first-guess)
   (define (close-enough? v1 v2)
-    (> (abs v1 v2) tolerance )))
+    (< (abs (- v1 v2)) tolerance ))
+  (define (try guess)
+    (let ((next (f guess)))
+      (if (close-enough? guess next)
+          next
+          (try next))))
+  (try first-guess))
+
+(fixed-point cos 1.0)
+
+(fixed-point (lambda (y) (+ (sin y) (cos y))) 1.0)
+
+
 (define (newton-transform g)
   (lambda (x)
-    (/ (- x (g x) ((deriv g) x)))))
+    (- x (/ (g x) ((deriv g) x)))))
 
 (define (newtons-method g guess)
   (fixed-point (newton-transform g) guess))
@@ -351,4 +366,140 @@
 (define (sqrt x)
   (newtons-method (lambda (y) (- (square y) x))
                   1.0))
+
+(sqrt 4)
+
+;; Ex. 2.1
+(define (gcd a b)
+  (if (= b 0)
+      a
+      (gcd b (remainder a b))))
+
+(gcd 25 15)
+
+(define (invert n) (* n -1))
+
+(define (make-rat n d)
+  (let ([g (gcd n d)]
+        [+n (abs n)]
+        [+d (abs d)])
+    (if (or (and (positive? n) (positive? d))
+            (and (negative? n) (negative? d)))
+        (cons (/ +n g) (/ +d g))
+        (cons (/ (invert +n) g) (/ +d g)))))
+
+(make-rat 15 -25)
+
+;; Ex. 2.2
+(define (make-segment x1 y1 x2 y2)
+  (cons (cons x1 y1)
+        (cons x2 y2)))
+
+(define (start-segment segment)
+  (car segment))
+
+(define (end-segment segment)
+  (cdr segment))
+
+(define (x-point point)
+  (car point))
+
+(define (y-point point)
+  (cdr point))
+
+(define (make-point x y)
+  (cons x y))
+
+(define (avg x y) (/ (+ x y) 2))
+
+(define (midpoint segment)
+  (let* ([start (start-segment segment)]
+         [end (end-segment segment)]
+         [x (avg (x-point start) (x-point end))]
+         [y (avg (y-point start) (y-point end))])
+    (make-point x y)))
+
+(midpoint (make-segment 0 0 2 4))
+
+(cadddr (list 0 1 2 3))
+
+;; 2.3
+;; Only works for first (+ +) quadrant
+(define (rect1 w x y z)
+  (list w x y z))
+
+(define w car)
+(define x cadr)
+(define y caddr)
+(define z cadddr)
+
+(define (xs rect) (map x-point rect))
+(define (ys rect) (map y-point rect))
+
+(define (height1 rect)
+  (let ([ylist (ys rect)])
+    (- (apply max ylist)
+       (apply min ylist))))
+
+(define (width1 rect)
+  (let ([ylist (xs rect)])
+    (- (apply max ylist)
+       (apply min ylist))))
+
+(define 4-by-6-rect (rect1 (make-point 0 0)
+                            (make-point 0 4)
+                            (make-point 6 4)
+                            (make-point 6 0)))
+
+(define (perimeter height-fn width-fn rect)
+  (+ (double (height-fn rect))
+     (double (width-fn rect))))
+
+(define (area height-fn width-fn rect)
+  (* (height-fn rect)
+     (width-fn rect)))
+
+(perimeter height1 width1 4-by-4-square)
+
+(area height1 width1 4-by-4-square)
+
+;; top/left style rectangle
+(define (rect top left height width)
+  (list top left height width))
+
+(define top car)
+(define left cadr)
+(define height caddr)
+(define width cadddr)
+
+(area height width (rect 0 0 10 10))
+(perimeter height width (rect 0 0 10 10))
+
+;; Ex. 2.4
+(define (nth-power x n)
+  (if (= n 0) 1
+      (* x (nth-power x (dec n)))))
+
+(nth-power 2 4)
+
+(define (cons2 a b)
+  (* (nth-power 2 a) (nth-power 3 b)))
+
+(/ 6 2)
+
+; (0 1) => 3
+; (0 2) => 9
+; (1 1) => 6
+; (2 1) => 12
+
+
+(define (car2 l)
+  (define (car2* l n)
+    (if (= 0 (remainder (/ l (nth-power 2 n)) 3))
+        n
+        (car2* l (inc n))))
+  (car2* l 0))
+
+()
+
 
