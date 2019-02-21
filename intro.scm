@@ -1,3 +1,8 @@
+(define-syntax comment
+  (syntax-rules ()
+    ((comment condition exp ...)
+     '())))
+
 (define (dec x)
   (- x 1))
 
@@ -487,19 +492,197 @@
 
 (/ 6 2)
 
+; (0 0) => 1
+; (1 0) => 2
 ; (0 1) => 3
-; (0 2) => 9
 ; (1 1) => 6
 ; (2 1) => 12
+; (2 2) => 36
+; (3 2) => 72
 
+(define (not= a b)
+  (not (= a b)))
 
 (define (car2 l)
   (define (car2* l n)
-    (if (= 0 (remainder (/ l (nth-power 2 n)) 3))
-        n
-        (car2* l (inc n))))
+    (cond ((= l 1) (+ n 0))
+          ((= l 2) (+ n 1))
+          ((= l 3) (+ n 0))
+          ((= l 6) (+ n 1))
+          (else (if (not= 0 (remainder l 2))
+                    n
+                    (car2* (/ l 2) (inc n))))))
   (car2* l 0))
+;; Done by the seat of my pants... can't believe this works :P
+(car2 72)
 
+(define (cdr2 l)
+  (define (cdr2* l n)
+    (cond ((= l 1) (+ n 0))
+          ((= l 2) (+ n 0))
+          ((= l 3) (+ n 1))
+          ((= l 6) (+ n 1))
+          (else (if (not= 0 (remainder l 3))
+                    n
+                    (cdr2* (/ l 3) (inc n))))))
+  (cdr2* l 0))
+
+(cdr2 72)
+
+;; Ex 2.6
+;; I'm stumped... this doesn't make any sense :(
+(define zero (lambda (f) (lambda (x) x)))
 ()
+(define (add-1 n)
+  (lambda (f) (lambda (x) (f ((n f) x)))))
+
+(add-1 zero)
+(comment
+ (lambda (f) (lambda (x) (f ((lambda (x) x) x)))))
+
+(define UNIT (lambda (x) x))
+(define UNIT2 (lambda (x) x))
+(define UNIT3 (lambda (x) x))
+(define TRUE
+  (λ (first-choice)
+    (λ (second-choice)
+      first-choice)))
+((TRUE 'foo) 'bar)
+
+(define FALSE
+  (λ (first-choice)
+    (λ (second-choice)
+      second-choice)))
+
+(IF (FALSE 'foo))
+
+
+
+(define IF
+  (λ (condition)
+    (λ (true-side-thunk)
+      (λ (false-side-thunk)
+        (((condition true-side-thunk) false-side-thunk) UNIT)))))
+
+(define AND-OBVIOUS
+  (λ (left-side)
+    (λ (right-side)
+      (((IF left-side)
+        (λ (x) right-side))
+       FALSE))))
+
+(define AND-CLEVER
+  (λ (left-side)
+    (λ (right-side)
+      ((left-side right-side) FALSE))))
+
+
+;; 2.1.4
+(define make-interval cons)
+(define upper-bound cdr)
+(define lower-bound car)
+
+(define (add-interval x y)
+  (make-interval (+ (lower-bound x) (lower-bound y))
+                 (+ (upper-bound x) (upper-bound y))))
+
+(define (sub-interval x y)
+  (make-interval (- (lower-bound x) (upper-bound y))
+                 (- (upper-bound x) (lower-bound y))))
+
+(define int1 (make-interval 9 11))
+(define int2 (make-interval 1 3))
+(define int3 (make-interval -3 -1))
+
+(add-interval int1 int2)
+(add-interval int1 int2)
+
+(sub-interval int1 int2)
+
+(define (mul-interval x y)
+  (let ([p1 (* (lower-bound x) (lower-bound y))]
+        [p2 (* (lower-bound x) (upper-bound y))]
+        [p3 (* (upper-bound x) (lower-bound y))]
+        [p4 (* (upper-bound x) (upper-bound y))])
+    (make-interval (min p1 p2 p3 p4)
+                   (max p1 p2 p3 p4))))
+
+;; (0 0)
+;; ()
+(define (all-true? l)
+  (reduce (lambda (prev curr) (and prev curr))
+         l #t))
+
+(all-true? (list #f #t))
+
+(define (all-zeroes? l)
+  (all-true? (map zero? l)))
+
+(all-zeroes? (list 0 1 0))
+
+(define (mul-interval x y)
+  (let ([xl (lower-bound x)]
+        [xu (upper-bound x)]
+        [yl (lower-bound y)]
+        [yu (upper-bound y)]
+        [x1 (>= 1 (lower-bound x))]
+        [x2 (>= 1 (upper-bound x))]
+        [y1 (>= 1 (lower-bound y))]
+        [y2 (>= 1 (upper-bound y))])
+    (cond
+                                        ; 0
+     ((or (all-zeroes? x) (all-zeroes? y))
+      (make-interval 0 0))
+                                        ; 1
+     ((and x1 x2 y1 y2)
+      (make-interval (* xl yl) (* xu yu)))
+                                        ; 2
+     ((not (or x1 x2 y1 y2))
+      (make-interval (* xu yu) (* xl yl)))
+                                        ;3
+     ((and x1 x2 (not y1) y2)
+      (make-interval (* xu yl) (* xu yu)))
+                                        ;4
+     ((and x1 x2 (not y1) (not y2))
+      (make-interval (* xu yu) (* xl yl)))
+                                        ;5
+     ((and (not x1) x2 y1 y2)
+      (make-interval (* xl yu) (* xu yu)))
+                                        ;6
+     ((and (not x1) (not x2) y1 y2)
+      (make-interval (* xu yl) (* xl yl)))
+                                        ;7
+     ((and (not x1) (not x2) (not y1) y2)
+      (make-interval (* xl yu) (* xl yl))))
+((and ))
+    (make-interval (min p1 p2 p3 p4)
+                   (max p1 p2 p3 p4))))
+(mul-interval int1 int2)
+(mul-interval int1 int3)
+
+(define (div-interval x y)
+  (let ([ly (lower-bound y)]
+        [uy (upper-bound y)])
+    (if (or (= uy 0) (= ly 0))
+        'error!-divide-by-zero
+        (mul-interval x
+                      (make-interval (/ 1.0 (upper-bound y))
+                                     (/ 1.0 (lower-bound y)))))))
+
+(div-interval int1 (make-interval 0 0))
+
+(define width (lambda (int) (/ (- (upper-bound int) (lower-bound int))
+                               2)))
+
+(width int1)
+
+;;
+;; width = f(x,y) = (y - x) / 2
+;;add = f(x1,x2,y1,y2) = (x1 + y1, x2 + y2)
+;;sub = f(x1,x2,y1,y2) = (x1 - y2, x2 - y1)
+;;
+;; 2.9
+;; The reason for the uncertainty is that the points
+;; have to swap depending on which is greater
 
 
